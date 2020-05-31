@@ -1,0 +1,78 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class PlayerManager : MonoBehaviour
+{
+    /// <summary>
+    /// variables to handle out the acceleration and deceleration of the player
+    /// </summary>
+    public float speed, accelerationRate = 0, maxSpeed = 250;
+    /// <summary>
+    /// variables to handle out the player's side movement and torquerotation
+    /// </summary>
+    public float sideSpeed, accelerationSideRate = 0, maxSideSpeed = 125;
+    /// <summary>
+    /// empty transform to handle pivoting torque
+    /// </summary>
+    public Transform rotationPivot;
+    Rigidbody rbd;
+
+    /// <summary>
+    /// Start is called on the frame when a script is enabled just before
+    /// any of the Update methods is called the first time.
+    /// </summary>
+    void Start()
+    {
+        rbd = GetComponent<Rigidbody>();
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        Movement();
+    }
+
+    public void Movement()
+    {
+        //getting the horizontal and vertical inputs that changes over time
+        float h = Input.GetAxis("Horizontal") * Time.deltaTime * sideSpeed;
+        float v = Input.GetAxis("Vertical") * Time.deltaTime * sideSpeed;
+
+        if (v == 0 && h == 0)
+        {
+            if (accelerationSideRate > 0)
+                accelerationSideRate -= sideSpeed * Time.deltaTime;
+            else if (accelerationSideRate < 0)
+                accelerationSideRate = 0;
+        }
+
+        if (h != 0 || v != 0)
+        {
+            if (accelerationSideRate < maxSideSpeed)
+                accelerationSideRate += sideSpeed * Time.deltaTime;
+            else if (accelerationSideRate > maxSideSpeed)
+                accelerationSideRate = maxSideSpeed;
+        }
+        transform.RotateAround(rotationPivot.position, new Vector3(-v, h, 0), sideSpeed * Time.deltaTime * accelerationSideRate);
+        rbd.AddForce(new Vector3(h, v, rbd.velocity.z), ForceMode.Acceleration);
+
+        if (rbd.velocity.z > maxSpeed)
+            rbd.velocity = new Vector3(rbd.velocity.x, rbd.velocity.y, rbd.velocity.z);
+        if (accelerationSideRate > maxSideSpeed)
+            accelerationRate = maxSideSpeed;
+
+        if (Input.GetKey(KeyCode.J))
+        {
+            accelerationRate += speed * Time.deltaTime;
+            rbd.AddForce((transform.forward * accelerationRate), ForceMode.Acceleration);
+        }
+
+        if (accelerationRate > 0 && rbd.velocity.z > accelerationRate)
+        {
+            accelerationRate -= speed * Time.deltaTime;
+        }
+        else if (accelerationRate < 0) accelerationRate = 0;
+
+    }
+}
