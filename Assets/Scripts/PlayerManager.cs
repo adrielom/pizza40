@@ -39,6 +39,7 @@ public class PlayerManager : MonoBehaviour
         float h = Input.GetAxis("Horizontal") * Time.deltaTime * sideSpeed;
         float v = Input.GetAxis("Vertical") * Time.deltaTime * sideSpeed;
 
+
         if (v == 0 && h == 0)
         {
             if (accelerationSideRate > 0)
@@ -54,8 +55,6 @@ public class PlayerManager : MonoBehaviour
             else if (accelerationSideRate > maxSideSpeed)
                 accelerationSideRate = maxSideSpeed;
         }
-        transform.RotateAround(rotationPivot.position, new Vector3(-v, h, 0), sideSpeed * Time.deltaTime * accelerationSideRate);
-        rbd.AddForce(new Vector3(h, v, rbd.velocity.z), ForceMode.Acceleration);
 
         if (rbd.velocity.z > maxSpeed)
             rbd.velocity = new Vector3(rbd.velocity.x, rbd.velocity.y, rbd.velocity.z);
@@ -64,11 +63,20 @@ public class PlayerManager : MonoBehaviour
 
         if (Input.GetKey(KeyCode.J))
         {
-            accelerationRate += speed * Time.deltaTime;
+            accelerationRate += speed * Time.deltaTime * 2;
             rbd.AddForce((transform.forward * accelerationRate), ForceMode.Acceleration);
+            transform.RotateAround(rotationPivot.position, new Vector3(-v, h, 0), sideSpeed * Time.deltaTime * accelerationSideRate);
+            rbd.AddForce(new Vector3(h, v, rbd.velocity.z), ForceMode.Acceleration);
+        }
+        else if (Input.GetKey(KeyCode.K))
+        {
+            accelerationRate += speed * Time.deltaTime * 2;
+            rbd.AddForce((-transform.forward * accelerationRate / 2), ForceMode.Acceleration);
+            transform.RotateAround(rotationPivot.position, new Vector3(-v, h, 0), sideSpeed * Time.deltaTime * accelerationSideRate);
+            rbd.AddForce(new Vector3(h, v, rbd.velocity.z), ForceMode.Acceleration);
         }
 
-        if (accelerationRate > 0 && rbd.velocity.z > accelerationRate)
+        if (accelerationRate > 0)
         {
             accelerationRate -= speed * Time.deltaTime;
         }
