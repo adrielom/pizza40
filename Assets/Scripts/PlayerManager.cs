@@ -36,8 +36,8 @@ public class PlayerManager : MonoBehaviour
     public void Movement()
     {
         //getting the horizontal and vertical inputs that changes over time
-        float h = Input.GetAxis("Horizontal") * Time.deltaTime * sideSpeed;
-        float v = Input.GetAxis("Vertical") * Time.deltaTime * sideSpeed;
+        float h = -Input.GetAxis("Horizontal") * Time.deltaTime * sideSpeed;
+        float v = -Input.GetAxis("Vertical") * Time.deltaTime * sideSpeed;
 
 
         if (v == 0 && h == 0)
@@ -65,9 +65,9 @@ public class PlayerManager : MonoBehaviour
         {
             accelerationRate += speed * Time.deltaTime * 2;
             rbd.AddForce((transform.forward * accelerationRate), ForceMode.Acceleration);
-            transform.RotateAround(rotationPivot.position, transform.up, h);
+            transform.RotateAround(rotationPivot.position, transform.forward, h);
             transform.RotateAround(rotationPivot.position, transform.right, v);
-            transform.RotateAround(rotationPivot.position, transform.forward, skewSpeed);
+            transform.RotateAround(rotationPivot.position, transform.up, skewSpeed);
             // if (v > 0)
             //     transform.RotateAround(rotationPivot.position, new Vector3(v, h, 0), sideSpeed * Time.deltaTime * accelerationSideRate);
             // else if (v < 0)
@@ -79,17 +79,17 @@ public class PlayerManager : MonoBehaviour
             accelerationRate += speed * Time.deltaTime * 2;
             rbd.AddForce((-transform.forward * accelerationRate / 2), ForceMode.Acceleration);
             // transform.RotateAround(rotationPivot.position, new Vector3(-v, h, 0), sideSpeed * Time.deltaTime * accelerationSideRate);
-            transform.RotateAround(rotationPivot.position, transform.up, h);
+            transform.RotateAround(rotationPivot.position, transform.forward, h);
             transform.RotateAround(rotationPivot.position, transform.right, v);
-            transform.RotateAround(rotationPivot.position, transform.forward, skewSpeed);
+            transform.RotateAround(rotationPivot.position, transform.up, skewSpeed);
             rbd.AddForce(new Vector3(h, v, rbd.velocity.z), ForceMode.Acceleration);
         }
         
         if(Input.GetKey(KeyCode.Q)){
-            skewSpeed+=accelerationSkewRate * Time.deltaTime;
+            skewSpeed-=accelerationSkewRate * Time.deltaTime;
         }
         else if(Input.GetKey(KeyCode.E)){
-            skewSpeed-=accelerationSkewRate * Time.deltaTime;
+            skewSpeed+=accelerationSkewRate * Time.deltaTime;
         }
         else{
             skewSpeed = 0;
