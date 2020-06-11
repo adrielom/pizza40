@@ -2,3 +2,4 @@ sceneSetups:
 - path: Assets/POLYGON - Sci-Fi City Pack/PolygonSciFiCity/_Scenes/Demo_Lockoff.unity
   isLoaded: 1
   isActive: 1
+  isSubScene: 0

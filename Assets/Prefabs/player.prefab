@@ -44,9 +44,10 @@ Camera:
   m_ClearFlags: 1
   m_BackGroundColor: {r: 0.19215687, g: 0.3019608, b: 0.4745098, a: 0}
   m_projectionMatrixMode: 1
+  m_GateFitMode: 2
+  m_FOVAxisMode: 0
   m_SensorSize: {x: 36, y: 24}
   m_LensShift: {x: 0, y: 0}
-  m_GateFitMode: 2
   m_FocalLength: 50
   m_NormalizedViewPortRect:
     serializedVersion: 2
@@ -172,6 +173,7 @@ MeshRenderer:
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -183,6 +185,7 @@ MeshRenderer:
   m_ProbeAnchor: {fileID: 0}
   m_LightProbeVolumeOverride: {fileID: 0}
   m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
   m_PreserveUVs: 0
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
@@ -223,12 +226,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b76f229a0bd028241af954932c96f724, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  sideSpeed: 5
   speed: 5
-  acceleration: 0.5
+  accelerationRate: 0
   maxSpeed: 30
+  sideSpeed: 5
+  accelerationSideRate: 0
+  maxSideSpeed: 125
   rotationPivot: {fileID: 171459708796303383}
-  pivotSpeed: {fileID: 0}
 --- !u!1 &173137322164941967
 GameObject:
   m_ObjectHideFlags: 0
@@ -283,6 +287,7 @@ MeshRenderer:
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -294,6 +299,7 @@ MeshRenderer:
   m_ProbeAnchor: {fileID: 0}
   m_LightProbeVolumeOverride: {fileID: 0}
   m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
   m_PreserveUVs: 0
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
@@ -360,6 +366,7 @@ MeshRenderer:
   m_MotionVectors: 1
   m_LightProbeUsage: 1
   m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -371,6 +378,7 @@ MeshRenderer:
   m_ProbeAnchor: {fileID: 0}
   m_LightProbeVolumeOverride: {fileID: 0}
   m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
   m_PreserveUVs: 0
   m_IgnoreNormalsForChartDetection: 0
   m_ImportantGI: 0
