@@ -2,6 +2,13 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+
+
+
+public enum MoveType{
+    reverse,
+    forward
+}
 public class PlayerManager : MonoBehaviour
 {
     /// <summary>
@@ -16,6 +23,8 @@ public class PlayerManager : MonoBehaviour
     /// empty transform to handle pivoting torque
     /// </summary>
     public Transform rotationPivot;
+
+    private MoveType moveType;
     Rigidbody rbd;
 
     /// <summary>
@@ -63,6 +72,10 @@ public class PlayerManager : MonoBehaviour
 
         if (Input.GetKey(KeyCode.J))
         {
+            if(moveType != MoveType.forward){
+                accelerationRate = 0;
+                moveType = MoveType.forward;
+            }
             accelerationRate += speed * Time.deltaTime * 2;
             rbd.AddForce((transform.forward * accelerationRate), ForceMode.Acceleration);
             transform.RotateAround(rotationPivot.position, transform.forward, h);
@@ -76,6 +89,10 @@ public class PlayerManager : MonoBehaviour
         }
         else if (Input.GetKey(KeyCode.K))
         {
+            if(moveType != MoveType.reverse){
+                accelerationRate = 0;
+                moveType = MoveType.reverse;
+            }
             accelerationRate += speed * Time.deltaTime * 2;
             rbd.AddForce((-transform.forward * accelerationRate / 2), ForceMode.Acceleration);
             // transform.RotateAround(rotationPivot.position, new Vector3(-v, h, 0), sideSpeed * Time.deltaTime * accelerationSideRate);
