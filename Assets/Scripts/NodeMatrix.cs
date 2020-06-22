@@ -34,6 +34,8 @@ public class Node
 
 public class NodeMatrix : MonoBehaviour
 {
+    [HideInInspector]
+    public NodeMatrix Instance;
     public Vector3 positionOffest;
     [Range(1, 100)]
     public int matrixSize = 10;
@@ -47,10 +49,12 @@ public class NodeMatrix : MonoBehaviour
     public List<Node> nodes = new List<Node>();
     public List<Node> midNodes = new List<Node>();
     public List<Node> allNodes = new List<Node>();
-    public GameObject car;
+    public GameObject target;
 
     void Start()
     {
+        if (Instance == null)
+            Instance = this;
         matrix = new Vector3[3, 3, 3];
         CreateMatrix();
         allNodes = nodes.Concat(midNodes).ToList();
@@ -63,7 +67,7 @@ public class NodeMatrix : MonoBehaviour
         DrawMatrix();
         Gizmos.color = new Color32(255, 165, 0, 255);
         if (allNodes.Count > 0 && drawClosestNode)
-            Gizmos.DrawLine(car.transform.position, FindClosestNode(car.transform.position, allNodes).vertexPosition);
+            Gizmos.DrawLine(target.transform.position, FindClosestNode(target.transform.position, allNodes).vertexPosition);
     }
 
     public void DrawMatrix()
@@ -97,11 +101,11 @@ public class NodeMatrix : MonoBehaviour
                         {
                             Gizmos.color = Color.yellow;
                             Gizmos.DrawLine(nodePos, oppositeVertex);
+                            Gizmos.DrawSphere(midPos, sphereRadius * .5f);
                             if (drawDiagonals)
                             {
                                 Gizmos.DrawLine(diag1, diag2);
 
-                                Gizmos.DrawSphere(midPos, sphereRadius * .5f);
                             }
                         }
                     }
@@ -260,12 +264,15 @@ public class NodeMatrix : MonoBehaviour
         float closeZ = QuickSorting(listZ, inputPosition.z);
         temp = temp.FindAll(n => n.vertexPosition.z == closeZ).ToList();
 
-        return temp.Find(n => n.vertexPosition == new Vector3(closeX, closeY, closeZ));
+        var node = temp.Find(n => n.vertexPosition == new Vector3(closeX, closeY, closeZ));
+
+        return node;
+
     }
 
     public Vector3 FindClosestVector3(Vector3 inputPosition)
     {
-        return FindClosestNode(inputPosition, allNodes.OrderBy(x => x.vertexPosition.x).OrderBy(y => y.vertexPosition.y).OrderBy(z => z.vertexPosition.z).ToList()).vertexPosition;
+        return FindClosestNode(inputPosition, allNodes.OrderBy(x => x.vertexPosition.x).OrderBy(y => y.vertexPosition.y).OrderBy(z => z.vertexPosition.z).Distinct().ToList()).vertexPosition;
     }
 
     /// <summary>
@@ -312,13 +319,23 @@ public class NodeMatrix : MonoBehaviour
             }
             else if (pivot < list[firstMid])
             {
-                var temp = list.GetRange(0, firstMid);
+                var temp = list.GetRange(0, firstMid + 1);
                 finalPos = QuickSorting(temp, pivot);
             }
-            else if (pivot > list[firstMid])
+            else if (pivot > list[secondMid])
             {
+                print("here");
                 var temp = list.GetRange(secondMid, end - secondMid);
                 finalPos = QuickSorting(temp, pivot);
+            }
+            else if (pivot > list[secondMid - 1] && pivot < list[firstMid + 1])
+            {
+                // - 36 pivot x  - 9 pivot z
+                var dist1 = pivot - list[secondMid - 1];
+                var dist2 = list[firstMid + 1] - pivot;
+
+                var dist = dist1 > dist2 ? list[firstMid + 1] : list[secondMid - 1];
+                return dist;
             }
         }
         else
