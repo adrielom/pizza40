@@ -14,6 +14,14 @@ public class Node
     //if oppositeVertex is (0,0,0) it's missing
     public Vector3 vertexPosition, oppositeVertex;
 
+    public Node(Node node)
+    {
+
+        this.neighbourNodes = node.neighbourNodes;
+        this.vertexPosition = node.vertexPosition;
+        this.oppositeVertex = node.oppositeVertex;
+    }
+
     public Node(Vector3 vertexPosition, List<Node> neighbourNodes)
     {
         this.vertexPosition = vertexPosition;
@@ -35,7 +43,8 @@ public class Node
 public class NodeMatrix : MonoBehaviour
 {
     [HideInInspector]
-    public NodeMatrix Instance;
+    public static NodeMatrix Instance;
+    [Header("Reposition")]
     public Vector3 positionOffest;
     [Range(1, 100)]
     public int matrixSize = 10;
@@ -50,16 +59,22 @@ public class NodeMatrix : MonoBehaviour
     public List<Node> midNodes = new List<Node>();
     public List<Node> allNodes = new List<Node>();
     public GameObject target;
+    public Node targetsClosestNode;
 
-    void Start()
+    void Awake()
     {
         if (Instance == null)
             Instance = this;
         matrix = new Vector3[3, 3, 3];
         CreateMatrix();
         allNodes = nodes.Concat(midNodes).ToList();
+        targetsClosestNode = FindClosestNode(target.transform.position, nodes);
     }
 
+    void Update()
+    {
+        targetsClosestNode = FindClosestNode(target.transform.position, nodes);
+    }
 
     void OnDrawGizmos()
     {
@@ -67,17 +82,15 @@ public class NodeMatrix : MonoBehaviour
         DrawMatrix();
         Gizmos.color = new Color32(255, 165, 0, 255);
         if (allNodes.Count > 0 && drawClosestNode)
-            Gizmos.DrawLine(target.transform.position, FindClosestNode(target.transform.position, allNodes).vertexPosition);
+            Gizmos.DrawLine(target.transform.position, targetsClosestNode.vertexPosition);
     }
 
     public void DrawMatrix()
     {
         positions.Clear();
         nodes.Clear();
-        int loops = 0;
         for (int i = 0; i < matrix.Length; i += sectionLength)
         {
-            loops++;
             for (int j = 0; j < matrix.Length; j += sectionLength)
             {
                 for (int k = 0; k < matrix.Length; k += sectionLength)
@@ -110,24 +123,29 @@ public class NodeMatrix : MonoBehaviour
                         }
                     }
 
-                    List<Node> tempNodes = new List<Node>();
-                    if (i + sectionLength < matrix.Length)
-                    {
-                        Node x = new Node(new Vector3(i + sectionLength - positionOffest.x, j - positionOffest.y, k - positionOffest.z) * matrixSize);
-                        tempNodes.Add(x);
-                    }
-                    if (j + sectionLength < matrix.Length)
-                    {
-                        Node x = new Node(new Vector3(i - positionOffest.x, j + sectionLength - positionOffest.y, k - positionOffest.z) * matrixSize);
-                        if (!tempNodes.Exists(y => y.vertexPosition == x.vertexPosition)) tempNodes.Add(x);
-                    }
-                    if (k + sectionLength < matrix.Length)
-                    {
-                        Node x = new Node(new Vector3(i - positionOffest.x, j - positionOffest.y, k + sectionLength - positionOffest.z) * matrixSize);
-                        if (!tempNodes.Exists(y => y.vertexPosition == x.vertexPosition)) tempNodes.Add(x);
-                    }
+                    List<Node> tempNodes = new List<Node>() {
+                        new Node (new Vector3(i - sectionLength - positionOffest.x, j - positionOffest.y, k - positionOffest.z) * matrixSize),
+                        new Node (new Vector3(i + sectionLength - positionOffest.x, j - positionOffest.y, k - positionOffest.z) * matrixSize),
+                        new Node (new Vector3(i - positionOffest.x, j - sectionLength - positionOffest.y, k - positionOffest.z) * matrixSize),
+                        new Node (new Vector3(i - positionOffest.x, j + sectionLength - positionOffest.y, k - positionOffest.z) * matrixSize),
+                        new Node (new Vector3(i - positionOffest.x, j - positionOffest.y, k - sectionLength - positionOffest.z) * matrixSize),
+                        new Node (new Vector3(i - positionOffest.x, j - positionOffest.y, k + sectionLength - positionOffest.z) * matrixSize)
+                    };
 
-                    Node posNode = new Node(nodePos, oppositeVertex, tempNodes);
+                    if (i <= 0 || i + sectionLength <= 0 && i + sectionLength < matrix.Length - 1)
+                        tempNodes[0] = null;
+                    if (i > matrix.Length || i + sectionLength > matrix.Length - 1)
+                        tempNodes[1] = null;
+                    if (j <= 0 || j + sectionLength <= 0 && j + sectionLength < matrix.Length - 1)
+                        tempNodes[2] = null;
+                    if (j > matrix.Length || j + sectionLength > matrix.Length - 1)
+                        tempNodes[3] = null;
+                    if (k <= 0 || k + sectionLength <= 0 && k + sectionLength < matrix.Length - 1)
+                        tempNodes[4] = null;
+                    if (k > matrix.Length || k + sectionLength > matrix.Length - 1)
+                        tempNodes[5] = null;
+
+                    Node posNode = new Node(nodePos, oppositeVertex, tempNodes.Where(q => q != null).ToList());
                     nodes.Add(posNode);
                 }
 
@@ -155,7 +173,8 @@ public class NodeMatrix : MonoBehaviour
 
     public Node GetNodeByPosition(Vector3 pos)
     {
-        return nodes.Find(n => n.vertexPosition == pos);
+        Node node = nodes.Find(n => n.vertexPosition == pos);
+        return node;
     }
 
     public void CreateMatrix()
@@ -188,23 +207,9 @@ public class NodeMatrix : MonoBehaviour
                     }
 
                     List<Node> tempNodes = new List<Node>();
-                    if (i + sectionLength < matrix.Length)
-                    {
-                        Node x = new Node(new Vector3(i + sectionLength - positionOffest.x, j - positionOffest.y, k - positionOffest.z) * matrixSize);
-                        tempNodes.Add(x);
-                    }
-                    if (j + sectionLength < matrix.Length)
-                    {
-                        Node x = new Node(new Vector3(i - positionOffest.x, j + sectionLength - positionOffest.y, k - positionOffest.z) * matrixSize);
-                        if (!tempNodes.Exists(y => y.vertexPosition == x.vertexPosition)) tempNodes.Add(x);
-                    }
-                    if (k + sectionLength < matrix.Length)
-                    {
-                        Node x = new Node(new Vector3(i - positionOffest.x, j - positionOffest.y, k + sectionLength - positionOffest.z) * matrixSize);
-                        if (!tempNodes.Exists(y => y.vertexPosition == x.vertexPosition)) tempNodes.Add(x);
-                    }
+                    tempNodes = FindNeighbourNodes(i, j, k);
 
-                    Node posNode = new Node(nodePos, oppositeVertex, tempNodes);
+                    Node posNode = new Node(nodePos, oppositeVertex, tempNodes.Where(q => q != null).ToList());
                     nodes.Add(posNode);
                 }
 
@@ -217,6 +222,64 @@ public class NodeMatrix : MonoBehaviour
             positions.Add(n.vertexPosition);
         });
     }
+
+    public List<Node> FindNeighbourNodes(float i, float j, float k)
+    {
+        List<Node> tempNodes = new List<Node>() {
+                        new Node (new Vector3(i - sectionLength - positionOffest.x, j - positionOffest.y, k - positionOffest.z) * matrixSize),
+                        new Node (new Vector3(i + sectionLength - positionOffest.x, j - positionOffest.y, k - positionOffest.z) * matrixSize),
+                        new Node (new Vector3(i - positionOffest.x, j - sectionLength - positionOffest.y, k - positionOffest.z) * matrixSize),
+                        new Node (new Vector3(i - positionOffest.x, j + sectionLength - positionOffest.y, k - positionOffest.z) * matrixSize),
+                        new Node (new Vector3(i - positionOffest.x, j - positionOffest.y, k - sectionLength - positionOffest.z) * matrixSize),
+                        new Node (new Vector3(i - positionOffest.x, j - positionOffest.y, k + sectionLength - positionOffest.z) * matrixSize)
+                    };
+
+        if (i <= 0 || i + sectionLength <= 0)
+            tempNodes[0] = null;
+        if (i > matrix.Length || i + sectionLength > matrix.Length)
+            tempNodes[1] = null;
+        if (j <= 0 || j + sectionLength <= 0)
+            tempNodes[2] = null;
+        if (j > matrix.Length || j + sectionLength > matrix.Length)
+            tempNodes[3] = null;
+        if (k <= 0 || k + sectionLength <= 0)
+            tempNodes[4] = null;
+        if (k > matrix.Length || k + sectionLength > matrix.Length)
+            tempNodes[5] = null;
+
+        return tempNodes;
+    }
+
+    public List<Node> FindNeighbourNodes(Vector3 input)
+    {
+        var i = input.x;
+        var j = input.y;
+        var k = input.z;
+        List<Node> tempNodes = new List<Node>() {
+                        new Node (new Vector3(i - sectionLength - positionOffest.x, j - positionOffest.y, k - positionOffest.z)),
+                        new Node (new Vector3(i + sectionLength - positionOffest.x, j - positionOffest.y, k - positionOffest.z)),
+                        new Node (new Vector3(i - positionOffest.x, j - sectionLength - positionOffest.y, k - positionOffest.z)),
+                        new Node (new Vector3(i - positionOffest.x, j + sectionLength - positionOffest.y, k - positionOffest.z)),
+                        new Node (new Vector3(i - positionOffest.x, j - positionOffest.y, k - sectionLength - positionOffest.z)),
+                        new Node (new Vector3(i - positionOffest.x, j - positionOffest.y, k + sectionLength - positionOffest.z))
+                    };
+
+        if (i <= 0 || i + sectionLength <= 0)
+            tempNodes[0] = null;
+        if (i > matrix.Length || i + sectionLength > matrix.Length)
+            tempNodes[1] = null;
+        if (j <= 0 || j + sectionLength <= 0)
+            tempNodes[2] = null;
+        if (j > matrix.Length || j + sectionLength > matrix.Length)
+            tempNodes[3] = null;
+        if (k <= 0 || k + sectionLength <= 0)
+            tempNodes[4] = null;
+        if (k > matrix.Length || k + sectionLength > matrix.Length)
+            tempNodes[5] = null;
+
+        return tempNodes;
+    }
+
 
     public void DrawLines()
     {
@@ -324,7 +387,6 @@ public class NodeMatrix : MonoBehaviour
             }
             else if (pivot > list[secondMid])
             {
-                print("here");
                 var temp = list.GetRange(secondMid, end - secondMid);
                 finalPos = QuickSorting(temp, pivot);
             }
