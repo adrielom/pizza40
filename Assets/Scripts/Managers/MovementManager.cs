@@ -20,16 +20,16 @@ public class MovementManager : MonoBehaviour
     /// variables to handle out the player's side movement and torquerotation
     /// </summary>
     public float sideYSpeed,sideXSpeed, maxSideSpeed = 125;
-    private float accelerationYrate = 0,accelerationXRate=0;
+    private float accelerationYrate = 0,accelerationXRate=0, accelerationZrate = 0;
     /// <summary>
     /// empty transform to handle pivoting torque
     /// </summary>
 
 
     [SerializeField]
-    private float accelCurveCoeff;
+    private float accelCurveCoeff=0;
     [SerializeField]
-    private float accelRate, backwardAccelRate;
+    private float accelRate=0, backwardAccelRate=0;
     public Transform rotationPivot;
 
     private MoveType moveType;
@@ -58,7 +58,7 @@ public class MovementManager : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update()
+    void FixedUpdate()
     {
         Movement(BaseInput.Instance.ForwardInput, BaseInput.Instance.VerticalInput, BaseInput.Instance.HorizontalInput);
     }
@@ -67,12 +67,14 @@ public class MovementManager : MonoBehaviour
     {
         //getting the horizontal and vertical inputs that changes over time
         float horizontalRatio = horizontal * Time.deltaTime * sideYSpeed;
+        float skewRatio = -horizontal * 2f;
+        float skewYRatio = -vertical * 2f;
         float verticalRatio = vertical * Time.deltaTime * sideXSpeed;
 
-
         DetermineSideRatio(verticalRatio, horizontalRatio);
-        CalcForwardSpeed(forward);
+        CalcForwardSpeed(forward, vertical);
         TurnTransform();
+        Skew(skewRatio, skewYRatio);
 
     }
 
@@ -80,11 +82,13 @@ public class MovementManager : MonoBehaviour
     private void DetermineSideRatio(float verticalRatio, float horizontalRatio){
         accelerationYrate = horizontalRatio != 0 ? accelerationYrate + (horizontalRatio * Time.deltaTime) : 0;
         accelerationXRate = verticalRatio != 0 ? accelerationXRate + (verticalRatio * Time.deltaTime) : 0;
+        // accelerationZrate = skewRatio != 0 ? accelerationZrate + (skewRatio * Time.deltaTime) : 0;
         accelerationYrate = Mathf.Clamp(accelerationYrate, -maxSideSpeed, maxSideSpeed);
+        // accelerationZrate = Mathf.Clamp(accelerationZrate, -maxSideSpeed*0.5f, maxSideSpeed*0.5f);
         accelerationXRate = Mathf.Clamp(accelerationXRate, -maxSideSpeed, maxSideSpeed);
     }
     
-    private void CalcForwardSpeed(float forward){
+    private void CalcForwardSpeed(float forward, float vertical){
         float accelPower =  forward>= 0 ? accelRate : backwardAccelRate;
 
         float accelRamp = rbd.velocity.magnitude/maxSpeed;
@@ -93,15 +97,15 @@ public class MovementManager : MonoBehaviour
         float finalAcceleration = accelPower * accelFinalRamp;
 
 
-        Quaternion turnAngleX = Quaternion.AngleAxis(accelerationXRate, rbd.transform.right);
         Quaternion turnAngleY = Quaternion.AngleAxis(accelerationYrate, rbd.transform.up);
 
-        Vector3 fwd = turnAngleX * rbd.transform.forward;
-        fwd = turnAngleY * fwd;
+        Vector3 fwd = turnAngleY * rbd.transform.forward;
+        
+        Vector3 towards = accelerationXRate * rbd.transform.up;
 
         Vector3 movement = fwd * forward * finalAcceleration;
 
-        Vector3 adjustedVelocity = rbd.velocity + movement * Time.deltaTime;
+        Vector3 adjustedVelocity = rbd.velocity + towards + movement * Time.deltaTime;
         
         if(adjustedVelocity.magnitude > maxSpeed){
             adjustedVelocity = Vector3.ClampMagnitude(adjustedVelocity, maxSpeed);
@@ -112,7 +116,24 @@ public class MovementManager : MonoBehaviour
     }
 
     private void TurnTransform(){
-            transform.RotateAround(rotationPivot.position, transform.right, accelerationXRate);
-            transform.RotateAround(rotationPivot.position, transform.up, accelerationYrate);
+            // transform.RotateAround(rotationPivot.position, transform.right, accelerationXRate);
+            transform.RotateAround(rotationPivot.position, Vector3.up, accelerationYrate);
+    }
+
+    private void Skew(float skewRatio, float skewYRatio){
+
+        var groundNormal = Vector3.up;
+        //Calculate the amount of pitch and roll the ship needs to match its orientation
+		//with that of the ground. This is done by creating a projection and then calculating
+		//the rotation needed to face that projection
+		Vector3 projection = Vector3.ProjectOnPlane(transform.forward, groundNormal);
+		Quaternion rotation = Quaternion.LookRotation(projection, groundNormal);
+
+		//Move the ship over time to match the desired rotation to match the ground. This is 
+		//done smoothly (using Lerp) to make it feel more realistic
+		rbd.MoveRotation(Quaternion.Lerp(rbd.rotation, rotation, Time.deltaTime * 5f));
+
+        Quaternion bodyRotation = transform.rotation * Quaternion.Euler(skewYRatio, 0f, skewRatio);
+        transform.rotation = Quaternion.Lerp(transform.rotation, bodyRotation, Time.deltaTime * 5f);
     }
 }
