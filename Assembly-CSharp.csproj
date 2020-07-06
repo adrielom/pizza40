@@ -50,6 +50,7 @@
      <Compile Include="Assets\Scripts\Managers\MovementManager.cs" />
      <Compile Include="Assets\Scripts\Managers\TimeManager.cs" />
      <Compile Include="Assets\Scripts\NodeMatrix.cs" />
+     <Compile Include="Assets\Scripts\RoutineScripts\CheckpointCollider.cs" />
      <Compile Include="Assets\Scripts\Utils\CameraFollow.cs" />
      <Compile Include="Assets\Scripts\Utils\Singleton.cs" />
      <None Include="Assets\POLYGON - Sci-Fi City Pack\PolygonSciFiCity\_Shaders\POLYGON_Triplanar.shader" />
