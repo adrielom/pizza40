@@ -29,9 +29,9 @@ public class Node
 
     public Node(Node node)
     {
-        this.neighbourNodes = node.neighbourNodes;
         this.vertexPosition = node.vertexPosition;
         this.oppositeVertex = node.oppositeVertex;
+        this.neighbourNodes = node.neighbourNodes;
     }
 
     public Node(Vector3 vertexPosition, List<Node> neighbourNodes)
@@ -110,6 +110,7 @@ public class NodeMatrix : MonoBehaviour
         allNodes = nodes.Concat(midNodes).ToList();
         //Find the closest node to a Target
         targetsClosestNode = FindClosestNode(target.transform.position, allNodes);
+
     }
 
     void Update()
@@ -319,17 +320,17 @@ public class NodeMatrix : MonoBehaviour
                     };
 
         //According to its inicial position, some of the nodes don't have certain neighbour nodes. They go past beyond the bounds of the matrix, so they have to be removed from the list
-        if (i <= 0 || i + sectionLength <= 0)
+        if (i <= 0)
             tempNodes[0] = null;
-        if (i > matrix.Length || i + sectionLength > matrix.Length)
+        if (i > sectionLength * matrixSize)
             tempNodes[1] = null;
-        if (j <= 0 || j + sectionLength <= 0)
+        if (j <= 0)
             tempNodes[2] = null;
-        if (j > matrix.Length || j + sectionLength > matrix.Length)
+        if (j > sectionLength * matrixSize)
             tempNodes[3] = null;
-        if (k <= 0 || k + sectionLength <= 0)
+        if (k <= 0)
             tempNodes[4] = null;
-        if (k > matrix.Length || k + sectionLength > matrix.Length)
+        if (k > sectionLength * matrixSize)
             tempNodes[5] = null;
 
         return tempNodes.Where(t => t != null).ToList();
@@ -361,12 +362,13 @@ public class NodeMatrix : MonoBehaviour
                         new Node (new Vector3(input.x + halfLength - positionOffest.x, input.y - halfLength - positionOffest.y, input.z + halfLength - positionOffest.z)),
 
                     };
-        print(tempNodes.Count);
 
         //For each element different than null in the list, add the midnode to it - The tempnode are the midnode neighbours, this code makes the back relation
         tempNodes.Where(t => t != null).ToList().ForEach(x =>
         {
             List<Node> ne = FindNeighbourNodes(x.vertexPosition);
+            GameObject p = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            p.transform.position = x.vertexPosition;
             x.neighbourNodes.Clear();
             x.neighbourNodes = ne;
             x.neighbourNodes.Add(mid);

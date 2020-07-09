@@ -81,8 +81,7 @@ public class PathFinding : MonoBehaviour
         while (!path.Contains(to))
         {
             Node next = GetPath(to, loopedNode, ref path);
-            if (next != null)
-                loopedNode = NodeMatrix.Instance.GetNodeByPosition(next.vertexPosition, NodeMatrix.Instance.allNodes);
+            loopedNode = NodeMatrix.Instance.GetNodeByPosition(next.vertexPosition, NodeMatrix.Instance.allNodes);
 
         }
 
@@ -110,23 +109,26 @@ public class PathFinding : MonoBehaviour
                 loopedNode.neighbourNodes = NodeMatrix.Instance.FindNeighbourNodes(loopedNode.vertexPosition).Where(t => t != null).ToList();
                 break;
             }
+
         }
 
         for (int i = 0; i < loopedNode.neighbourNodes.Count; i++)
         {
-            if (Vector3.Distance(loopedNode.neighbourNodes[i].vertexPosition, to.vertexPosition) < dist && loopedNode.neighbourNodes[i].vertexPosition != lastNode?.vertexPosition)
+            Node con = path.Find(x => x.vertexPosition == loopedNode.neighbourNodes[i].vertexPosition);
+            if (Vector3.Distance(loopedNode.neighbourNodes[i].vertexPosition, to.vertexPosition) < dist && con == null)
             {
                 dist = Vector3.Distance(loopedNode.neighbourNodes[i].vertexPosition, to.vertexPosition);
 
                 lastNode = new Node(loopedNode.neighbourNodes[i]);
+                Debug.Log(lastNode.vertexPosition);
             }
         }
+
 
         if (!path.Any(l => l.vertexPosition == lastNode.vertexPosition))
         {
             path.Add(lastNode);
         }
-
 
         return lastNode;
 
