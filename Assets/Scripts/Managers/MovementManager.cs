@@ -21,6 +21,14 @@ public class MovementManager : MonoBehaviour
     /// </summary>
     public float sideYSpeed,sideXSpeed, maxSideSpeed = 125;
     private float accelerationYrate = 0,accelerationXRate=0, accelerationZrate = 0;
+
+    private float xRot, zRot;
+
+    [SerializeField]
+    private float maxXRot = 45, maxZRot = 90;
+
+    [SerializeField]
+    private float speedRotEffect = 1f;
     /// <summary>
     /// empty transform to handle pivoting torque
     /// </summary>
@@ -68,7 +76,7 @@ public class MovementManager : MonoBehaviour
         //getting the horizontal and vertical inputs that changes over time
         float horizontalRatio = horizontal * Time.deltaTime * sideYSpeed;
         float skewRatio = -horizontal * 2f;
-        float skewYRatio = -vertical * 2f;
+        float skewYRatio = -vertical * 4f;
         float verticalRatio = vertical * Time.deltaTime * sideXSpeed;
 
         DetermineSideRatio(verticalRatio, horizontalRatio);
@@ -101,11 +109,13 @@ public class MovementManager : MonoBehaviour
 
         Vector3 fwd = turnAngleY * rbd.transform.forward;
         
-        Vector3 towards = accelerationXRate * rbd.transform.up;
+        
+        /*Should be activated only if you want vertical speed */
+        // Vector3 towards = accelerationXRate * rbd.transform.up;
 
         Vector3 movement = fwd * forward * finalAcceleration;
 
-        Vector3 adjustedVelocity = rbd.velocity + towards + movement * Time.deltaTime;
+        Vector3 adjustedVelocity = rbd.velocity + /*+ towards +*/ movement * Time.deltaTime;
         
         if(adjustedVelocity.magnitude > maxSpeed){
             adjustedVelocity = Vector3.ClampMagnitude(adjustedVelocity, maxSpeed);
@@ -122,18 +132,36 @@ public class MovementManager : MonoBehaviour
 
     private void Skew(float skewRatio, float skewYRatio){
 
-        var groundNormal = Vector3.up;
+
+        /* --------- OLD CODE TO ALIGN CAR -------------------------------------------------
+        // var groundNormal = Vector3.up;
         //Calculate the amount of pitch and roll the ship needs to match its orientation
 		//with that of the ground. This is done by creating a projection and then calculating
 		//the rotation needed to face that projection
-		Vector3 projection = Vector3.ProjectOnPlane(transform.forward, groundNormal);
-		Quaternion rotation = Quaternion.LookRotation(projection, groundNormal);
+		// Vector3 projection = Vector3.ProjectOnPlane(transform.forward, groundNormal);
+		// Quaternion rotation = Quaternion.LookRotation(projection, groundNormal);
 
 		//Move the ship over time to match the desired rotation to match the ground. This is 
 		//done smoothly (using Lerp) to make it feel more realistic
-		rbd.MoveRotation(Quaternion.Lerp(rbd.rotation, rotation, Time.deltaTime * 5f));
+		// rbd.MoveRotation(Quaternion.Lerp(rbd.rotation, rotation, Time.deltaTime * 5f));
+        */
+        float previousXRot = xRot;
+        float previousZRot = zRot;
 
-        Quaternion bodyRotation = transform.rotation * Quaternion.Euler(skewYRatio, 0f, skewRatio);
-        transform.rotation = Quaternion.Lerp(transform.rotation, bodyRotation, Time.deltaTime * 5f);
+        float xRotRatio = maxXRot*0.01f*speedRotEffect;
+        float zRotRatio = maxZRot*0.01f*speedRotEffect;
+
+        xRot = skewYRatio!= 0 ? xRot + skewYRatio : xRot - (Mathf.Sign(xRot)*xRotRatio);
+        zRot = skewRatio!= 0 ? zRot + skewRatio : zRot - (Mathf.Sign(zRot)*zRotRatio);
+        
+        xRot = Mathf.Clamp(xRot, -maxXRot, maxXRot);
+        xRot = Mathf.Abs(xRot)>xRotRatio? xRot : 0;
+        zRot = Mathf.Clamp(zRot, -maxZRot, maxZRot);
+        zRot = Mathf.Abs(zRot)>zRotRatio? zRot : 0;
+        Quaternion newRotation = Quaternion.Euler(Mathf.Lerp(previousXRot, xRot, Time.deltaTime * 5f), transform.eulerAngles.y, Mathf.Lerp(previousZRot, zRot, Time.deltaTime * 5f));
+        // Quaternion bodyRotation = transform.rotation * Quaternion.Euler(skewYRatio, 0f, skewRatio);
+        transform.rotation = newRotation;
+        
+        // transform.eulerAngles = new Vector3(Mathf.Sign(transform.eulerAngles.x) * Mathf.Clamp(Mathf.Abs(transform.eulerAngles.x),0,45), transform.eulerAngles.y, Mathf.Clamp(transform.eulerAngles.z,-90f, 90f));
     }
 }
