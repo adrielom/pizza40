@@ -82,7 +82,7 @@ public class MovementManager : MonoBehaviour
         DetermineSideRatio(verticalRatio, horizontalRatio);
         CalcForwardSpeed(forward, vertical);
         TurnTransform();
-        Skew(skewRatio, skewYRatio);
+        Skew(skewRatio, skewYRatio, BaseInput.Instance.FirstComboInput);
 
     }
 
@@ -130,7 +130,8 @@ public class MovementManager : MonoBehaviour
             transform.RotateAround(rotationPivot.position, Vector3.up, accelerationYrate);
     }
 
-    private void Skew(float skewRatio, float skewYRatio){
+    private void Skew(float skewRatio, float skewYRatio, float stuntCoeff){
+
 
 
         /* --------- OLD CODE TO ALIGN CAR -------------------------------------------------
@@ -145,6 +146,8 @@ public class MovementManager : MonoBehaviour
 		//done smoothly (using Lerp) to make it feel more realistic
 		// rbd.MoveRotation(Quaternion.Lerp(rbd.rotation, rotation, Time.deltaTime * 5f));
         */
+
+
         float previousXRot = xRot;
         float previousZRot = zRot;
 
@@ -156,8 +159,13 @@ public class MovementManager : MonoBehaviour
         
         xRot = Mathf.Clamp(xRot, -maxXRot, maxXRot);
         xRot = Mathf.Abs(xRot)>xRotRatio? xRot : 0;
-        zRot = Mathf.Clamp(zRot, -maxZRot, maxZRot);
-        zRot = Mathf.Abs(zRot)>zRotRatio? zRot : 0;
+        if(stuntCoeff != 0){
+            zRot = Mathf.Clamp(zRot + skewRatio*2, -90f, 90f);
+        }
+        else{
+            zRot = Mathf.Abs(zRot) > Mathf.Abs(previousZRot) ? Mathf.Clamp(zRot, -maxZRot, maxZRot) : zRot;
+            zRot = Mathf.Abs(zRot) > zRotRatio? zRot : 0;
+        }
         Quaternion newRotation = Quaternion.Euler(Mathf.Lerp(previousXRot, xRot, Time.deltaTime * 5f), transform.eulerAngles.y, Mathf.Lerp(previousZRot, zRot, Time.deltaTime * 5f));
         // Quaternion bodyRotation = transform.rotation * Quaternion.Euler(skewYRatio, 0f, skewRatio);
         transform.rotation = newRotation;
