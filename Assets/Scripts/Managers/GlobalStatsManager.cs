@@ -16,6 +16,8 @@ public class GlobalStatsManager : Singleton<GlobalStatsManager>
 
     public bool ready = false;
 
+    public float turboBarRatio = 100f;
+
     void Awake(){
         TimeManager.Instance.AddTime(initialTime);
         ready = true;

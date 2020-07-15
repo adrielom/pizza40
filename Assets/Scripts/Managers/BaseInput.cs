@@ -52,6 +52,17 @@ public class BaseInput : Singleton<BaseInput>
         }
     }
 
+
+    ///<summary>
+    /// Get Input from the turbo button.
+    ///</summary>
+
+    public float TurboInput{
+        get{
+            return devMode? (Input.GetKey(KeyCode.Space)?1:0) : 0;
+        }
+    }
+
     ///<summary>
     /// Gets a value of 1 if the player moved the analog stick on the horizontal direction fast, for a stunt.
     ///</summary>
