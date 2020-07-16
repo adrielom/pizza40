@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using UnityEngine;
 
@@ -80,8 +82,7 @@ public class NodeMatrix : MonoBehaviour
 {
     [HideInInspector]
     public static NodeMatrix Instance;
-    [Header("Reposition")]
-    public Vector3 positionOffest;
+    Vector3 positionOffest;
     [Range(1, 100)]
     public int matrixSize = 10;
     Vector3[,,] matrix;
@@ -89,8 +90,11 @@ public class NodeMatrix : MonoBehaviour
     public int sectionLength = 5;
     [Range(1, 100)]
     public float sphereRadius = 5;
+    [Range(1, 5)]
+    public float edgeLength = 1;
     public bool drawEdges = true, drawMidpoint = true, drawVertices = true, drawMatrixCentre = true, drawDiagonals = true, drawClosestNode = true;
     public List<Vector3> positions = new List<Vector3>();
+    public List<Vector3> nodeNeighboursPositions = new List<Vector3>();
     public List<Node> nodes = new List<Node>();
     public List<MidNode> midNodes = new List<MidNode>();
     public List<Node> allNodes = new List<Node>();
@@ -171,7 +175,7 @@ public class NodeMatrix : MonoBehaviour
                         var diag1 = new Vector3(oppositeVertex.x - sectionLength * matrixSize, oppositeVertex.y, oppositeVertex.z);
                         var diag2 = new Vector3(nodePos.x + sectionLength * matrixSize, nodePos.y, nodePos.z);
                         //gets section midpoint
-                        var midPos = (diag1 + diag2) / 2;
+                        var midPos = ((diag1 + diag2) / 2);
 
                         //Based on the Inspector values, displays the edges and midpoints for each node
                         if (drawMidpoint)
@@ -230,6 +234,12 @@ public class NodeMatrix : MonoBehaviour
         return node;
     }
 
+    public void SetNeighbourPosition()
+    {
+        nodeNeighboursPositions.Clear();
+        targetsClosestNode.neighbourNodes.ForEach(x => nodeNeighboursPositions.Add(x.vertexPosition));
+    }
+
     /// <summary>
     /// Gets the node found at the pos position
     /// </summary>
@@ -270,7 +280,7 @@ public class NodeMatrix : MonoBehaviour
                         oppositeVertex = new Vector3(i + sectionLength - positionOffest.x, j + sectionLength - positionOffest.y, k + sectionLength - positionOffest.z) * matrixSize;
                         var diag1 = new Vector3(oppositeVertex.x - sectionLength * matrixSize, oppositeVertex.y, oppositeVertex.z);
                         var diag2 = new Vector3(nodePos.x + sectionLength * matrixSize, nodePos.y, nodePos.z);
-                        var midPos = (diag1 + diag2) / 2;
+                        var midPos = ((diag1 + diag2) / 2);
 
                         //Creates a midnode object
                         MidNode mid = new MidNode(midPos);
@@ -289,7 +299,29 @@ public class NodeMatrix : MonoBehaviour
                     nodes.Add(posNode);
                 }
 
+                //Debuggind purposes - Shows up in inspector
+                nodes.ForEach(n =>
+                {
+                    positions.Add(n.vertexPosition);
+                });
             }
+
+            Dictionary<int, Node> tempMid = new Dictionary<int, Node>();
+            midNodes.ForEach(m =>
+            {
+                m.neighbourNodes.ForEach(n =>
+                {
+                    int index = nodes.FindIndex(x => x.vertexPosition == n.vertexPosition);
+                    if (index != -1) tempMid.Add(index, m);
+                });
+            });
+
+            int helperIndex = 0;
+            tempMid.Keys.ToList().ForEach(k =>
+            {
+                nodes[k].neighbourNodes.Add(tempMid.Values.ElementAt(helperIndex));
+                helperIndex++;
+            });
         }
 
     }
@@ -303,34 +335,44 @@ public class NodeMatrix : MonoBehaviour
     /// <returns>Returns a list of nodes</returns>
     public List<Node> FindNeighbourNodes(float i, float j, float k)
     {
+        StackTrace trace = new StackTrace();
+        float matrixSize = 0;
+        matrixSize = trace.GetFrame(2).GetMethod().Name == "DrawMatrix" ? this.matrixSize / edgeLength : this.matrixSize;
+
         //Every node has a fixed amount of starting nodes - 6. Two for each axis.
         List<Node> tempNodes = new List<Node>() {
                         //Grows to the left on the x axis
-                        new Node (new Vector3(i - sectionLength * matrixSize - positionOffest.x, j - positionOffest.y, k - positionOffest.z)),
+                        new Node (new Vector3(i - sectionLength * matrixSize - positionOffest.x, j, k)),
                         //Grows to the right on the x axis
-                        new Node (new Vector3(i + sectionLength * matrixSize - positionOffest.x, j - positionOffest.y, k - positionOffest.z)),
+                        new Node (new Vector3(i + sectionLength * matrixSize - positionOffest.x, j, k)),
                         //Grows to the left on the y axis
-                        new Node (new Vector3(i - positionOffest.x, j - sectionLength * matrixSize - positionOffest.y, k - positionOffest.z)),
+                        new Node (new Vector3(i, j - sectionLength * matrixSize - positionOffest.y, k)),
                         //Grows to the right on the y axis
-                        new Node (new Vector3(i - positionOffest.x, j + sectionLength * matrixSize - positionOffest.y, k - positionOffest.z)),
+                        new Node (new Vector3(i, j + sectionLength * matrixSize - positionOffest.y, k)),
                         //Grows to the left on the z axis
-                        new Node (new Vector3(i - positionOffest.x, j - positionOffest.y, k - sectionLength * matrixSize - positionOffest.z)),
+                        new Node (new Vector3(i, j, k - sectionLength * matrixSize - positionOffest.z)),
                         //Grows to the right on the z axis
-                        new Node (new Vector3(i - positionOffest.x, j - positionOffest.y, k + sectionLength * matrixSize - positionOffest.z))
+                        new Node (new Vector3(i, j, k + sectionLength * matrixSize - positionOffest.z))
                     };
 
+        float startBoundX = this.matrixSize * positionOffest.x;
+        float startBoundY = this.matrixSize * positionOffest.y;
+        float startBoundZ = this.matrixSize * positionOffest.z;
+
+        int endBound = (Mathf.RoundToInt(matrix.Length / sectionLength) * this.matrixSize * sectionLength);
+        float a = startBoundX + endBound;
         //According to its inicial position, some of the nodes don't have certain neighbour nodes. They go past beyond the bounds of the matrix, so they have to be removed from the list
-        if (i <= 0)
+        if (a == 0 || startBoundX - i == -2 * i)
             tempNodes[0] = null;
-        if (i > sectionLength * matrixSize)
+        if (endBound == Convert.ToInt16(i + startBoundX))
             tempNodes[1] = null;
-        if (j <= 0)
+        if (startBoundY - j == 0 || startBoundY - j == -2 * j)
             tempNodes[2] = null;
-        if (j > sectionLength * matrixSize)
+        if (endBound == Convert.ToInt16(j + startBoundY))
             tempNodes[3] = null;
-        if (k <= 0)
+        if (startBoundZ - k == 0 || startBoundZ - k == -2 * k)
             tempNodes[4] = null;
-        if (k > sectionLength * matrixSize)
+        if (endBound == Convert.ToInt16(k + startBoundZ))
             tempNodes[5] = null;
 
         return tempNodes.Where(t => t != null).ToList();
@@ -344,31 +386,24 @@ public class NodeMatrix : MonoBehaviour
     public List<Node> FindNeighbourMidNodes(MidNode mid)
     {
         //Half of the section length
-        float halfLength = Mathf.Floor(sectionLength * matrixSize / 2);
+        float halfLength = sectionLength * matrixSize / 2;
         //Actual length
         float length = sectionLength;
         //the vector3 input
         Vector3 input = mid.vertexPosition;
-
-        //Every node has a fixed amount of starting nodes - 8. Four vertices on top and four on the bottom.
         List<Node> tempNodes = new List<Node>() {
-                        new Node (new Vector3(input.x - halfLength - positionOffest.x, input.y + halfLength - positionOffest.y, input.z - halfLength - positionOffest.z)),
-                        new Node (new Vector3(input.x - halfLength - positionOffest.x, input.y + halfLength - positionOffest.y, input.z + halfLength - positionOffest.z)),
-                        new Node (new Vector3(input.x + halfLength - positionOffest.x, input.y + halfLength - positionOffest.y, input.z - halfLength - positionOffest.z)),
-                        new Node (new Vector3(input.x + halfLength - positionOffest.x, input.y + halfLength - positionOffest.y, input.z + halfLength - positionOffest.z)),
-                        new Node (new Vector3(input.x - halfLength - positionOffest.x, input.y - halfLength - positionOffest.y, input.z - halfLength - positionOffest.z)),
-                        new Node (new Vector3(input.x - halfLength - positionOffest.x, input.y - halfLength - positionOffest.y, input.z + halfLength - positionOffest.z)),
-                        new Node (new Vector3(input.x + halfLength - positionOffest.x, input.y - halfLength - positionOffest.y, input.z - halfLength - positionOffest.z)),
-                        new Node (new Vector3(input.x + halfLength - positionOffest.x, input.y - halfLength - positionOffest.y, input.z + halfLength - positionOffest.z)),
+                        new Node (new Vector3(input.x - halfLength < 1 ? 0 : Mathf.Round(input.x - halfLength), Mathf.Ceil(input.y + halfLength), Mathf.Ceil(input.z + halfLength))),
+                        new Node (new Vector3(Mathf.Ceil(input.x + halfLength), Mathf.Ceil(input.y + halfLength), input.z - halfLength < 1 ? 0 : Mathf.Round(input.z - halfLength))),
+                        new Node (new Vector3(Mathf.Ceil(input.x + halfLength), Mathf.Ceil(input.y + halfLength), Mathf.Ceil(input.z + halfLength))),
+                        new Node (new Vector3(input.x - halfLength < 1 ? 0 : Mathf.Round(input.x - halfLength), input.y - halfLength < 1 ? 0 : Mathf.Round(input.y - halfLength), input.z - halfLength < 1 ? 0 : Mathf.Round(input.z - halfLength))),
+                        new Node (new Vector3(input.x - halfLength < 1 ? 0 : Mathf.Round(input.x - halfLength), input.y - halfLength < 1 ? 0 : Mathf.Round(input.y - halfLength), Mathf.Ceil(input.z + halfLength))),
+                        new Node (new Vector3(Mathf.Ceil(input.x + halfLength), input.y - halfLength < 1 ? 0 : Mathf.Round(input.y - halfLength), input.z - halfLength < 1 ? 0 : Mathf.Round(input.z - halfLength))),
+                        new Node (new Vector3(Mathf.Ceil(input.x + halfLength), input.y - halfLength < 1 ? 0 : Mathf.Round(input.y - halfLength), Mathf.Ceil(input.z + halfLength))),
 
-                    };
-
-        //For each element different than null in the list, add the midnode to it - The tempnode are the midnode neighbours, this code makes the back relation
+                    }; // midnode to it - The tempnode are the midnode neighbours, this code makes the back relation
         tempNodes.Where(t => t != null).ToList().ForEach(x =>
         {
             List<Node> ne = FindNeighbourNodes(x.vertexPosition);
-            GameObject p = GameObject.CreatePrimitive(PrimitiveType.Cube);
-            p.transform.position = x.vertexPosition;
             x.neighbourNodes.Clear();
             x.neighbourNodes = ne;
             x.neighbourNodes.Add(mid);
@@ -414,6 +449,7 @@ public class NodeMatrix : MonoBehaviour
     /// <returns>return closest Node</returns>
     public Node FindClosestNode(Vector3 inputPosition, List<Node> nodes)
     {
+
         //Ordering the values here is crucial due the quicksort algorithm applied afterwards
         //Gets the distinct elements of said node list ordering by x axis value
         var listX = nodes.OrderBy(n => n.vertexPosition.x).Select(s => s.vertexPosition.x).Distinct().ToList();
