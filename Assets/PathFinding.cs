@@ -11,37 +11,78 @@ public class PathFinding : MonoBehaviour
     //List of nodes that make up the path
     List<Node> path = new List<Node>();
     // The destination node and a hard memoized copy of it
-    Node to = null, memoizedNode = null;
-    void Start()
+    Node to = null, memoizedFromNode = null, from = null;
+    Vector3 memoizedPosition = Vector3.positiveInfinity, closestDistance = Vector3.positiveInfinity;
+    float closestDistanceToTarget = Mathf.Infinity;
+    Color randColour;
+    bool atSamePosition = false;
+
+    bool drawLines = false;
+    IEnumerator Start()
     {
+        yield return new WaitUntil(() => CheckpointManager.Instance.GetGeneratedPoints() != null);
         //Sets up the 'to Node' to a random position
-        to = GetRandomNode();
+        to = NodeMatrix.Instance.FindClosestNode(this.transform.position, NodeMatrix.Instance.allNodes);
+        memoizedPosition = transform.position;
         //'From' node is the closest node to the target
-        Node from = NodeMatrix.Instance?.targetsClosestNode;
+        from = NodeMatrix.Instance?.targetsClosestNode;
+        closestDistanceToTarget = Vector3.Distance(from.vertexPosition, this.transform.position);
         //Gets the path
         path = FindPath(from, to);
         //Stores the from position
-        memoizedNode = from;
+        memoizedFromNode = from;
+        randColour = new Color(Random.Range(0f, 1f), Random.Range(0f, 1f), Random.Range(0f, 1f), 1);
     }
 
     void Update()
     {
-        //checks if the targetsClosestNode changed
-        if (memoizedNode?.vertexPosition != NodeMatrix.Instance?.targetsClosestNode.vertexPosition)
+        if (transform.position != memoizedPosition && !memoizedPosition.Equals(Vector3.positiveInfinity))
         {
-            //Clears up the path
             path.Clear();
-
-            memoizedNode = NodeMatrix.Instance?.targetsClosestNode;
-            //gets the path
+            to = NodeMatrix.Instance.FindClosestNode(this.transform.position, NodeMatrix.Instance.allNodes);
+            memoizedPosition = to.oppositeVertex;
             path = FindPath(NodeMatrix.Instance?.targetsClosestNode, to);
-            print("hey");
+        }
+
+        //checks if the targetsClosestNode changed
+        if (memoizedFromNode?.vertexPosition != NodeMatrix.Instance?.targetsClosestNode?.vertexPosition && to != null && !memoizedPosition.Equals(Vector3.positiveInfinity))
+        {
+            closestDistanceToTarget = Vector3.Distance(from.vertexPosition, this.transform.position);
+            if (closestDistanceToTarget <= NodeMatrix.Instance.sectionLength * NodeMatrix.Instance.matrixSize)
+            {
+                CalculateClosestDistance();
+            }
+            else
+            {
+
+                //Clears up the path
+                path.Clear();
+                NodeMatrix.Instance.SetNeighbourPosition();
+                memoizedFromNode = NodeMatrix.Instance?.targetsClosestNode;
+                //gets the path
+                path = FindPath(NodeMatrix.Instance?.targetsClosestNode, to);
+            }
+
+        }
+    }
+
+    public void CalculateClosestDistance()
+    {
+        if (closestDistanceToTarget < NodeMatrix.Instance.matrixSize)
+        {
+            atSamePosition = true;
+            print("same pos");
         }
     }
 
     //Draws the path
     void OnDrawGizmos()
     {
+
+        Gizmos.color = new Color32(255, 165, 0, 255);
+        if (from != null && to != null)
+            Gizmos.DrawLine(to.vertexPosition, transform.position);
+
         if (path.Count > 0)
         {
             //Draws the starting point cube
@@ -51,7 +92,7 @@ public class PathFinding : MonoBehaviour
             //Draws the ending point cube
             Gizmos.color = Color.black;
             Gizmos.DrawCube(path[path.Count - 1].vertexPosition, Vector3.one * NodeMatrix.Instance.sphereRadius);
-            Gizmos.color = Color.green;
+            Gizmos.color = randColour;
             //Draws path
             for (int i = 0; i < path.Count; i++)
             {
@@ -120,12 +161,9 @@ public class PathFinding : MonoBehaviour
                 dist = Vector3.Distance(loopedNode.neighbourNodes[i].vertexPosition, to.vertexPosition);
 
                 lastNode = new Node(loopedNode.neighbourNodes[i]);
-                Debug.Log(lastNode.vertexPosition);
             }
         }
-
-
-        if (!path.Any(l => l.vertexPosition == lastNode.vertexPosition))
+        if (!path.Any(l => l?.vertexPosition == lastNode?.vertexPosition))
         {
             path.Add(lastNode);
         }
