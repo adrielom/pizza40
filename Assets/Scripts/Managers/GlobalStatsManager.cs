@@ -22,4 +22,9 @@ public class GlobalStatsManager : Singleton<GlobalStatsManager>
         TimeManager.Instance.AddTime(initialTime);
         ready = true;
     }
+
+
+    public void SetTurbo(float quantity){
+        turboBarRatio+= quantity / 100f;
+    }
 }

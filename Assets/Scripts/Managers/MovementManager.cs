@@ -7,7 +7,7 @@ public enum MoveType{
     reverse,
     forward
 }
-public class MovementManager : MonoBehaviour
+public class MovementManager : Singleton<MovementManager>
 {
     /// <summary>
     /// variables to handle out the acceleration and deceleration of the player
@@ -20,7 +20,7 @@ public class MovementManager : MonoBehaviour
     /// variables to handle out the player's side movement and torquerotation
     /// </summary>
     public float sideYSpeed,sideXSpeed, maxSideSpeed = 125;
-    private float accelerationYrate = 0,accelerationXRate=0, accelerationZrate = 0;
+    private float accelerationYrate = 0,accelerationXRate=0;
 
     [SerializeField]
     private float xRot, zRot;
@@ -44,7 +44,25 @@ public class MovementManager : MonoBehaviour
 
     private MoveType moveType;
 
-    private bool burnout = false;
+    private bool burnout = false, skew = false;
+
+    ///<summary>
+    /// Reference to know if the car is on burnout.
+    ///</summary>
+    public bool isOnBurnout{
+        get{
+            return burnout;
+        }
+    }
+
+     ///<summary>
+    /// Reference to know if the car is on Skew.
+    ///</summary>
+    public bool isOnSkew{
+        get{
+            return skew;
+        }
+    }
 
     ///<summary>
     /// Turbo variables.
@@ -218,10 +236,12 @@ public class MovementManager : MonoBehaviour
         xRot = Mathf.Abs(xRot)>xRotRatio? xRot : 0;
         if(stuntCoeff != 0){
             zRot = Mathf.Clamp(zRot + skewRatio*2, -90f, 90f);
+            skew = true;
         }
         else{
             zRot = Mathf.Abs(zRot) > Mathf.Abs(previousZRot) ? Mathf.Clamp(zRot, -maxZRot, maxZRot) : zRot;
             zRot = Mathf.Abs(zRot) > zRotRatio? zRot : 0;
+            skew = false;
         }
 
         return Quaternion.Euler(Mathf.Lerp(previousXRot, xRot, Time.deltaTime * 5f), transform.eulerAngles.y, Mathf.Lerp(previousZRot, zRot, Time.deltaTime * 5f));
