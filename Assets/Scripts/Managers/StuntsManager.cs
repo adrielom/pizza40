@@ -68,6 +68,10 @@ public class StuntsManager : MonoBehaviour
     
     #region "METHODS"
     Stunts CheckStunts(){
+        if(MovementManager.Instance.isMissing){
+            Debug.Log("Detected near miss!");
+            return Stunts.MISS;
+        }
         if(MovementManager.Instance.isOnBurnout){
             return Stunts.BURNOUT;
         }

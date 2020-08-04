@@ -44,7 +44,7 @@ public class MovementManager : Singleton<MovementManager>
 
     private MoveType moveType;
 
-    private bool burnout = false, skew = false;
+    private bool burnout = false, skew = false, nearmiss = false;
 
     ///<summary>
     /// Reference to know if the car is on burnout.
@@ -61,6 +61,12 @@ public class MovementManager : Singleton<MovementManager>
     public bool isOnSkew{
         get{
             return skew;
+        }
+    }
+
+    public bool isMissing{
+        get{
+            return nearmiss;
         }
     }
 
@@ -261,5 +267,15 @@ public class MovementManager : Singleton<MovementManager>
             onTurboMode = false;
             GlobalStatsManager.Instance.turboBarRatio = 0;
         }
+    }
+
+
+    ///<summary>
+    ///IEnumarator to know when the car missed something. Is called by <see cref="NearMissDetection"/>
+    ///</summary>
+    public IEnumerator NearMissStunt(){
+        nearmiss = true;
+        yield return new WaitForEndOfFrame();
+        nearmiss = false;
     }
 }
